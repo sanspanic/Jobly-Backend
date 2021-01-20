@@ -1,3 +1,4 @@
+//TODO understand: what does use strict do?
 "use strict";
 
 /** Convenience middleware to handle common auth cases in routes. */
@@ -5,7 +6,6 @@
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
 const { UnauthorizedError } = require("../expressError");
-
 
 /** Middleware: Authenticate user.
  *
@@ -17,8 +17,15 @@ const { UnauthorizedError } = require("../expressError");
 
 function authenticateJWT(req, res, next) {
   try {
+    //TODO understand: why is authHeader not a Boolean?
+    //  if (req.headers) {
+    //  authHeader = req.headers.authorization
+    // }  else {
+    //  authHeader = false
+    //    }
     const authHeader = req.headers && req.headers.authorization;
     if (authHeader) {
+      //TODO understand: what does below do?
       const token = authHeader.replace(/^[Bb]earer /, "").trim();
       res.locals.user = jwt.verify(token, SECRET_KEY);
     }
@@ -41,7 +48,6 @@ function ensureLoggedIn(req, res, next) {
     return next(err);
   }
 }
-
 
 module.exports = {
   authenticateJWT,

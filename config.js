@@ -11,9 +11,9 @@ const PORT = +process.env.PORT || 3001;
 
 // Use dev database, testing database, or via env var, production database
 function getDatabaseUri() {
-  return (process.env.NODE_ENV === "test")
-      ? "jobly_test"
-      : process.env.DATABASE_URL || "jobly";
+  return process.env.NODE_ENV === "test"
+    ? "jobly_test"
+    : process.env.DATABASE_URL || "jobly";
 }
 
 // Speed up bcrypt during tests, since the algorithm safety isn't being tested
@@ -26,6 +26,7 @@ console.log("SECRET_KEY:".yellow, SECRET_KEY);
 console.log("PORT:".yellow, PORT.toString());
 console.log("BCRYPT_WORK_FACTOR".yellow, BCRYPT_WORK_FACTOR);
 console.log("Database:".yellow, getDatabaseUri());
+console.log("NODE_ENV: ".yellow, process.env.NODE_ENV);
 console.log("---");
 
 module.exports = {
