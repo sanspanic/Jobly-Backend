@@ -57,32 +57,65 @@ class Company {
     return companiesRes.rows;
   }
 
-  /* Find all companies filtered by name */
+  /* Find all companies filtered by name, min and max employee count */
 
   static async filter(query) {
     const { name, minEmployees, maxEmployees } = query;
+
+    //breaks query down into 3 parts: start, middle, end
+    //middle further broken down into name query and employee num queries
+    //middle put back together using join on ' AND '
+    //captures values in array and assigns position based on array length
 
     const queryStringStart = `SELECT handle,
                               name,
                               description,
                               num_employees AS "numEmployees",
                               logo_url AS "logoUrl"
-                            FROM companies`;
+                            FROM companies WHERE `;
     const queryStringEnd = `ORDER BY name`;
 
     let queryStringMiddle = ``;
     let valueArray = [];
+    let valueIndices = {};
+    let queryStringEmpFiltering = [];
 
     if (name) {
-      queryStringMiddle = queryStringMiddle.concat(`WHERE name ILIKE $1`);
       valueArray.push(`%${name}%`);
+      valueIndices.name = valueArray.length;
+      queryStringMiddle = queryStringMiddle.concat(
+        `name ILIKE $${valueIndices.name}`
+      );
     }
 
-    console.log(`${queryStringStart} ${queryStringMiddle} ${queryStringEnd}`);
-    console.log(valueArray);
+    if (minEmployees) {
+      valueArray.push(minEmployees);
+      valueIndices.minEmployees = valueArray.length;
+      queryStringEmpFiltering.push(
+        `num_employees > $${valueIndices.minEmployees}`
+      );
+    }
+
+    if (maxEmployees) {
+      valueArray.push(maxEmployees);
+      valueIndices.maxEmployees = valueArray.length;
+      queryStringEmpFiltering.push(
+        `num_employees < $${valueIndices.maxEmployees}`
+      );
+    }
+
+    if (name) {
+      queryStringMiddle = [queryStringMiddle, ...queryStringEmpFiltering].join(
+        " AND "
+      );
+    } else {
+      queryStringMiddle = [...queryStringEmpFiltering].join(" AND ");
+    }
+
+    //console.log(`${queryStringStart} ${queryStringMiddle} ${queryStringEnd}`);
 
     const companiesRes = await db.query(
-      `${queryStringStart} ${queryStringMiddle}$ ${queryStringEnd}`,
+      `${queryStringStart} ${queryStringMiddle} ${queryStringEnd}`,
       valueArray
     );
 
