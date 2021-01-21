@@ -28,7 +28,7 @@ function authenticateJWT(req, res, next) {
       //TODO understand: what does below do?
       const token = authHeader.replace(/^[Bb]earer /, "").trim();
       res.locals.user = jwt.verify(token, SECRET_KEY);
-      console.log(res.locals);
+      //console.log(res.locals);
     }
     return next();
   } catch (err) {
@@ -65,8 +65,22 @@ function ensureIsAdmin(req, res, next) {
   }
 }
 
+function ensureIsAdminOrSelf(req, res, next) {
+  try {
+    const user = res.locals.user;
+    if (user.username === req.params.username || user.isAdmin) {
+      return next();
+    } else {
+      throw new UnauthorizedError("Not authorized");
+    }
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
   ensureIsAdmin,
+  ensureIsAdminOrSelf,
 };
