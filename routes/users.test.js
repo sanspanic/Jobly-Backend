@@ -128,7 +128,6 @@ describe("POST /users", function () {
 
 /************************************** GET /users */
 
-//TODO: understand - why is this test failing
 describe("GET /users", function () {
   test("works: for admin", async function () {
     const resp = await request(app)
@@ -136,6 +135,13 @@ describe("GET /users", function () {
       .set("authorization", `Bearer ${adminToken}`);
     expect(resp.body).toEqual({
       users: [
+        {
+          username: "admin",
+          firstName: "admin",
+          lastName: "admin",
+          email: "admin@user.com",
+          isAdmin: true,
+        },
         {
           username: "u1",
           firstName: "U1F",
@@ -156,13 +162,6 @@ describe("GET /users", function () {
           lastName: "U3L",
           email: "user3@user.com",
           isAdmin: false,
-        },
-        {
-          username: "admin",
-          firstName: "admin",
-          lastName: "admin",
-          email: "admin@user.com",
-          isAdmin: true,
         },
       ],
     });
