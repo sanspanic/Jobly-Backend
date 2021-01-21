@@ -11,6 +11,7 @@ const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
 const companyUpdateSchema = require("../schemas/companyUpdate.json");
+const companySearchSchema = require("../schemas/companySearch.json");
 
 const router = new express.Router();
 
@@ -51,12 +52,26 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
 
 router.get("/", async function (req, res, next) {
   try {
-    //if query with filter terms passed in, filtering will occur
+    //convert strings into ints first and validate
+    if (req.query.minEmployees)
+      req.query.minEmployees = +req.query.minEmployees;
+    if (req.query.maxEmployees)
+      req.query.maxEmployees = +req.query.maxEmployees;
+
+    const validator = jsonschema.validate(req.query, companySearchSchema);
+    if (!validator.valid) {
+      const errs = validator.errors.map((e) => e.stack);
+      throw new BadRequestError(errs);
+    }
+
     const { minEmployees, maxEmployees, name } = req.query;
+
+    //if query with filter terms passed in, filtering will occur
     if (minEmployees || maxEmployees || name) {
       const companies = await Company.filter(req.query);
       return res.json({ companies });
     }
+
     //no filtering
     const companies = await Company.findAll();
     return res.json({ companies });

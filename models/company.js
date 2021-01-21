@@ -60,13 +60,20 @@ class Company {
   /* Find all companies filtered by name, min and max employee count */
 
   static async filter(query) {
-    const { name, minEmployees, maxEmployees } = query;
+    let { name, minEmployees, maxEmployees } = query;
 
     //breaks query down into 3 parts: start, middle, end
     //middle further broken down into name query and employee num queries
     //middle put back together using join on ' AND '
     //captures values in array and assigns position based on array length
 
+    if (minEmployees > maxEmployees) {
+      throw new BadRequestError(
+        `Maximum employees number must be larger than minimum employees number.`
+      );
+    }
+
+    //put together query
     const queryStringStart = `SELECT handle,
                               name,
                               description,
@@ -92,7 +99,7 @@ class Company {
       valueArray.push(minEmployees);
       valueIndices.minEmployees = valueArray.length;
       queryStringEmpFiltering.push(
-        `num_employees > $${valueIndices.minEmployees}`
+        `num_employees >= $${valueIndices.minEmployees}`
       );
     }
 
@@ -100,7 +107,7 @@ class Company {
       valueArray.push(maxEmployees);
       valueIndices.maxEmployees = valueArray.length;
       queryStringEmpFiltering.push(
-        `num_employees < $${valueIndices.maxEmployees}`
+        `num_employees <= $${valueIndices.maxEmployees}`
       );
     }
 
@@ -132,7 +139,9 @@ class Company {
     ); */
 
     if (companiesRes.rows.length === 0) {
-      throw new NotFoundError(`No company with name: ${name}`);
+      throw new NotFoundError(
+        `No company matching your search criteria was found.`
+      );
     }
     return companiesRes.rows;
   }

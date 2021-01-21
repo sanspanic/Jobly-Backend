@@ -95,6 +95,45 @@ describe("GET /companies", function () {
     });
   });
 
+  test("works: filtering by NAME", async function () {
+    const resp = await request(app).get("/companies").query({ name: "c1" });
+    expect(resp.body).toEqual({
+      companies: [
+        {
+          handle: "c1",
+          name: "C1",
+          description: "Desc1",
+          numEmployees: 1,
+          logoUrl: "http://c1.img",
+        },
+      ],
+    });
+  });
+
+  test("works: filtering by ALL", async function () {
+    const resp = await request(app)
+      .get("/companies")
+      .query({ name: "C3", minEmployees: "3", maxEmployees: "3" });
+    expect(resp.body).toEqual({
+      companies: [
+        {
+          handle: "c3",
+          name: "C3",
+          description: "Desc3",
+          numEmployees: 3,
+          logoUrl: "http://c3.img",
+        },
+      ],
+    });
+  });
+
+  test("error: wrong query passed in - schema validation", async function () {
+    const resp = await request(app)
+      .get("/companies")
+      .query({ bla: "C3", minEmployees: "3", maxEmployees: "3" });
+    expect(resp.statusCode).toEqual(400);
+  });
+
   test("fails: test next() handler", async function () {
     // there's no normal failure event which will cause this route to fail ---
     // thus making it hard to test that the error-handler works with it. This
