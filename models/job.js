@@ -16,17 +16,17 @@ class Job {
    * Throws BadRequestError if invalid company_handle
    * */
 
-  static async create({ title, salary, equity, company_handle }) {
+  static async create({ title, salary, equity, companyHandle }) {
     //check if company handle exists
     const handleExists = await db.query(
       `SELECT handle
          FROM companies
          WHERE handle = $1`,
-      [company_handle]
+      [companyHandle]
     );
 
     if (handleExists.rows.length === 0) {
-      throw new BadRequestError(`No company with handle: ${company_handle}`);
+      throw new BadRequestError(`No company with handle: ${companyHandle}`);
     }
 
     const result = await db.query(
@@ -34,7 +34,7 @@ class Job {
            (title, salary, equity, company_handle)
            VALUES ($1, $2, $3, $4)
            RETURNING id, title, salary, equity, company_handle AS "companyHandle"`,
-      [title, salary, equity, company_handle]
+      [title, salary, equity, companyHandle]
     );
     const job = result.rows[0];
 
@@ -56,6 +56,53 @@ class Job {
            FROM jobs
            ORDER BY title`
     );
+    return jobsRes.rows;
+  }
+
+  /** Find all jobs based on search criteria (title, minSalary, hasEquity)
+   *
+   * Returns [{ id, title, salary, equity, companyHandle }, ...]
+   * */
+
+  static async filter(query) {
+    const { title, minSalary, hasEquity } = query;
+
+    //initialise vars to capture indexes associated with values, and the valueArr to pass in to query
+    const indexes = { title: null, minSalary: null };
+    const valueArr = [];
+
+    //eventually below query parts will be combined into final query. middle part with first be combined by .join on ' AND '
+    const firstPartOfQuery = `SELECT id, title, salary, equity, company_handle AS "companyHandle" FROM jobs WHERE`;
+    const lastPartOfQuery = `ORDER BY title`;
+    const middlePartOfQueryArr = [];
+
+    if (title) {
+      valueArr.push(`%${title}%`);
+      indexes.title = valueArr.length;
+      middlePartOfQueryArr.push(`title ILIKE $${indexes.title}`);
+    }
+
+    if (minSalary) {
+      valueArr.push(minSalary);
+      indexes.minSalary = valueArr.length;
+      middlePartOfQueryArr.push(`salary > $${indexes.minSalary}`);
+    }
+
+    if (hasEquity === true) {
+      middlePartOfQueryArr.push(`equity > 0`);
+    }
+
+    const middlePartOfQuery = middlePartOfQueryArr.join(" AND ");
+
+    const jobsRes = await db.query(
+      `${firstPartOfQuery} ${middlePartOfQuery} ${lastPartOfQuery}`,
+      valueArr
+    );
+
+    if (jobsRes.rows.length === 0) {
+      throw new NotFoundError("No jobs found matching your search criteria");
+    }
+
     return jobsRes.rows;
   }
 

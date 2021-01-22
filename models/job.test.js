@@ -23,7 +23,7 @@ describe("create", function () {
     title: "Administrator",
     salary: 20000,
     equity: "0.1",
-    company_handle: "c1",
+    companyHandle: "c1",
   };
 
   test("works: create new job", async function () {
@@ -39,7 +39,7 @@ describe("create", function () {
 
   test("error: wrong company handle", async function () {
     try {
-      newJob.company_handle = "nope";
+      newJob.companyHandle = "nope";
       let job = await Job.create(newJob);
       fail();
     } catch (err) {
@@ -77,6 +77,97 @@ describe("findAll", function () {
         companyHandle: "c3",
       },
     ]);
+  });
+});
+
+/************************************** FILTER */
+
+describe("filter", function () {
+  test("works: filter by title", async function () {
+    let jobs = await Job.filter({ title: "j1" });
+    expect(jobs).toEqual([
+      {
+        id: testJobIds[0],
+        title: "j1",
+        salary: 100000,
+        equity: "0",
+        companyHandle: "c1",
+      },
+    ]);
+  });
+
+  test("works: filter by title case-insensitive", async function () {
+    let jobs = await Job.filter({ title: "J1" });
+    expect(jobs).toEqual([
+      {
+        id: testJobIds[0],
+        title: "j1",
+        salary: 100000,
+        equity: "0",
+        companyHandle: "c1",
+      },
+    ]);
+  });
+
+  test("works: filter by minSalary", async function () {
+    let jobs = await Job.filter({ minSalary: 80000 });
+    expect(jobs).toEqual([
+      {
+        id: testJobIds[0],
+        title: "j1",
+        salary: 100000,
+        equity: "0",
+        companyHandle: "c1",
+      },
+    ]);
+  });
+
+  test("works: filter by equity - has equity", async function () {
+    let jobs = await Job.filter({
+      hasEquity: true,
+    });
+    expect(jobs).toEqual([
+      {
+        id: testJobIds[1],
+        title: "j2",
+        salary: 50000,
+        equity: "1",
+        companyHandle: "c2",
+      },
+      {
+        id: testJobIds[2],
+        title: "j3",
+        salary: 20000,
+        equity: "0.2",
+        companyHandle: "c3",
+      },
+    ]);
+  });
+
+  test("works: filter by all", async function () {
+    let jobs = await Job.filter({
+      minSalary: 40000,
+      hasEquity: true,
+      title: "j",
+    });
+    expect(jobs).toEqual([
+      {
+        id: testJobIds[1],
+        title: "j2",
+        salary: 50000,
+        equity: "1",
+        companyHandle: "c2",
+      },
+    ]);
+  });
+
+  test("error: search criteria don't match any jobs", async function () {
+    try {
+      await Job.filter({ title: "name" });
+      fail();
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
   });
 });
 

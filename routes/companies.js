@@ -21,7 +21,7 @@ const router = new express.Router();
  *
  * Returns { handle, name, description, numEmployees, logoUrl }
  *
- * Authorization required: login
+ * Authorization required: login, admin
  */
 
 router.post(
@@ -110,7 +110,7 @@ router.get("/:handle", async function (req, res, next) {
  *
  * Returns { handle, name, description, numEmployees, logo_url }
  *
- * Authorization required: login
+ * Authorization required: login, admin
  */
 
 router.patch(
@@ -135,7 +135,7 @@ router.patch(
 
 /** DELETE /[handle]  =>  { deleted: handle }
  *
- * Authorization: login
+ * Authorization: login, admin
  */
 
 router.delete(

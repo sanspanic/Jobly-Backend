@@ -8,6 +8,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  testJobIds,
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -84,6 +85,13 @@ describe("findAll", function () {
         numEmployees: 3,
         logoUrl: "http://c3.img",
       },
+      {
+        handle: "c4",
+        name: "C4",
+        description: "Desc4",
+        numEmployees: 4,
+        logoUrl: "http://c4.img",
+      },
     ]);
   });
 });
@@ -155,6 +163,15 @@ describe("filter", function () {
       expect(err instanceof BadRequestError).toBeTruthy();
     }
   });
+
+  test("error: search criteria don't match any companies", async function () {
+    try {
+      await Company.filter({ name: "name" });
+      fail();
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
+  });
 });
 
 /************************************** get */
@@ -168,6 +185,19 @@ describe("get", function () {
       description: "Desc1",
       numEmployees: 1,
       logoUrl: "http://c1.img",
+      jobs: [testJobIds[0]],
+    });
+  });
+
+  test("works: gets company by handle: company w/o jobs", async function () {
+    let company = await Company.get("c4");
+    expect(company).toEqual({
+      handle: "c4",
+      name: "C4",
+      description: "Desc4",
+      numEmployees: 4,
+      logoUrl: "http://c4.img",
+      jobs: [],
     });
   });
 

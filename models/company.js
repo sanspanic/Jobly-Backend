@@ -156,21 +156,41 @@ class Company {
 
   static async get(handle) {
     const companyRes = await db.query(
-      `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           WHERE handle = $1`,
+      `SELECT c.handle,
+              c.name,
+              c.description,
+              c.num_employees AS "numEmployees",
+              c.logo_url AS "logoUrl", 
+              j.id,
+              j.company_handle
+        FROM companies AS c
+        LEFT JOIN jobs AS j
+        ON c.handle = j.company_handle
+        WHERE c.handle = $1`,
       [handle]
     );
 
-    const company = companyRes.rows[0];
+    if (!companyRes.rows[0])
+      throw new NotFoundError(`No company with handle: ${handle}`);
 
-    if (!company) throw new NotFoundError(`No company: ${handle}`);
+    const onlyJobIds = [];
 
-    return company;
+    companyRes.rows.forEach((row) => {
+      //only push in id of job if company has any jobs associated with it, otherwise arr will have "null"
+      if (row.id) {
+        onlyJobIds.push(row.id);
+      }
+    });
+
+    const companyFinal = {
+      ...companyRes.rows[0],
+      jobs: onlyJobIds,
+    };
+    //delete unnecessary query results relating to job
+    delete companyFinal.id;
+    delete companyFinal.company_handle;
+
+    return companyFinal;
   }
 
   /** Update company data with `data`.

@@ -17,7 +17,8 @@ async function commonBeforeAll() {
     INSERT INTO companies(handle, name, num_employees, description, logo_url)
     VALUES ('c1', 'C1', 1, 'Desc1', 'http://c1.img'),
            ('c2', 'C2', 2, 'Desc2', 'http://c2.img'),
-           ('c3', 'C3', 3, 'Desc3', 'http://c3.img')`);
+           ('c3', 'C3', 3, 'Desc3', 'http://c3.img'),
+           ('c4', 'C4', 4, 'Desc4', 'http://c4.img')`);
 
   await db.query(
     `
@@ -39,7 +40,7 @@ async function commonBeforeAll() {
       INSERT INTO jobs(title, salary, equity, company_handle)
       VALUES ('j1', 100000, 0, 'c1'),
              ('j2', 50000, 1, 'c2'),
-             ('j3', 20000, 0.2, 'c3') 
+             ('j3', 20000, 0.2, 'c3')
       RETURNING id`);
 
   jobsRes.rows.forEach((r) => testJobIds.push(r.id));
