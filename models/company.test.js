@@ -160,7 +160,7 @@ describe("filter", function () {
 /************************************** get */
 
 describe("get", function () {
-  test("works", async function () {
+  test("works: gets company by handle", async function () {
     let company = await Company.get("c1");
     expect(company).toEqual({
       handle: "c1",
@@ -171,7 +171,7 @@ describe("get", function () {
     });
   });
 
-  test("not found if no such company", async function () {
+  test("error: not found if no such company", async function () {
     try {
       await Company.get("nope");
       fail();
@@ -191,7 +191,7 @@ describe("update", function () {
     logoUrl: "http://new.img",
   };
 
-  test("works", async function () {
+  test("works: full data diven", async function () {
     let company = await Company.update("c1", updateData);
     expect(company).toEqual({
       handle: "c1",
@@ -214,7 +214,7 @@ describe("update", function () {
     ]);
   });
 
-  test("works: null fields", async function () {
+  test("works: null fields given", async function () {
     const updateDataSetNulls = {
       name: "New",
       description: "New Description",
@@ -244,7 +244,7 @@ describe("update", function () {
     ]);
   });
 
-  test("not found if no such company", async function () {
+  test("error: not found if no such company", async function () {
     try {
       await Company.update("nope", updateData);
       fail();
@@ -253,7 +253,7 @@ describe("update", function () {
     }
   });
 
-  test("bad request with no data", async function () {
+  test("error: bad request with no data", async function () {
     try {
       await Company.update("c1", {});
       fail();
@@ -266,7 +266,7 @@ describe("update", function () {
 /************************************** remove */
 
 describe("remove", function () {
-  test("works", async function () {
+  test("works: removes company", async function () {
     await Company.remove("c1");
     const res = await db.query(
       "SELECT handle FROM companies WHERE handle='c1'"
@@ -274,7 +274,7 @@ describe("remove", function () {
     expect(res.rows.length).toEqual(0);
   });
 
-  test("not found if no such company", async function () {
+  test("error: not found if no such company", async function () {
     try {
       await Company.remove("nope");
       fail();

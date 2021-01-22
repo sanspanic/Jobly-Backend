@@ -3,8 +3,6 @@ const bcrypt = require("bcrypt");
 const db = require("../db.js");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
-//TODO: understand why my version of this code without "splice" didn't work and exported an empty array
-//let testJobIds = [];
 const testJobIds = [];
 
 async function commonBeforeAll() {
@@ -43,9 +41,8 @@ async function commonBeforeAll() {
              ('j2', 50000, 1, 'c2'),
              ('j3', 20000, 0.2, 'c3') 
       RETURNING id`);
-  //testJobIds = jobsRes.rows.map((r) => r.id);
-  testJobIds.splice(0, 0, ...jobsRes.rows.map((r) => r.id));
-  console.log(testJobIds);
+
+  jobsRes.rows.forEach((r) => testJobIds.push(r.id));
 }
 
 async function commonBeforeEach() {
