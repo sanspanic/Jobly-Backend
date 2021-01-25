@@ -146,18 +146,15 @@ class Company {
     if (!companyRes.rows[0])
       throw new NotFoundError(`No company with handle: ${handle}`);
 
-    const onlyJobIds = [];
-
-    companyRes.rows.forEach((row) => {
-      //only push in id of job if company has any jobs associated with it, otherwise arr will have "null"
-      if (row.id) {
-        onlyJobIds.push(row.id);
-      }
-    });
+    let jobIds = [];
+    //only push in id of job if company has any jobs associated with it, otherwise arr will have "null" inside instead of being empty
+    if (companyRes.rows[0].id) {
+      jobIds = companyRes.rows.map((row) => row.id);
+    }
 
     const companyFinal = {
       ...companyRes.rows[0],
-      jobs: onlyJobIds,
+      jobs: jobIds,
     };
     //delete unnecessary query results relating to job
     delete companyFinal.id;
