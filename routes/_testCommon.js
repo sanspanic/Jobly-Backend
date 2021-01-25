@@ -47,12 +47,14 @@ async function commonBeforeAll() {
     logoUrl: "http://c4.img",
   });
 
-  await User.register({
+  //must use registerSelf method to pass in custom password, otherwise pw will be random.
+  //password necessary to know for one of the auth tests (POST auth/token) so registerSelf method used here
+  await User.registerSelf({
     username: "u1",
     firstName: "U1F",
     lastName: "U1L",
-    email: "user1@user.com",
     password: "password1",
+    email: "user1@user.com",
     isAdmin: false,
   });
   await User.register({
@@ -60,7 +62,6 @@ async function commonBeforeAll() {
     firstName: "U2F",
     lastName: "U2L",
     email: "user2@user.com",
-    password: "password2",
     isAdmin: false,
   });
   await User.register({
@@ -68,7 +69,6 @@ async function commonBeforeAll() {
     firstName: "U3F",
     lastName: "U3L",
     email: "user3@user.com",
-    password: "password3",
     isAdmin: false,
   });
   await User.register({
@@ -76,7 +76,6 @@ async function commonBeforeAll() {
     firstName: "admin",
     lastName: "admin",
     email: "admin@user.com",
-    password: "password4",
     isAdmin: true,
   });
   await Job.create({
