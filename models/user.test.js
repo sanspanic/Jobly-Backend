@@ -55,7 +55,7 @@ describe("authenticate", function () {
 
 /************************************** register */
 
-describe("register", function () {
+describe("register via admin", function () {
   const newUser = {
     username: "new",
     firstName: "Test",
@@ -67,7 +67,6 @@ describe("register", function () {
   test("works: register user", async function () {
     let user = await User.register({
       ...newUser,
-      password: "password",
     });
     expect(user).toEqual(newUser);
     const found = await db.query("SELECT * FROM users WHERE username = 'new'");
@@ -79,7 +78,6 @@ describe("register", function () {
   test("works: adds admin", async function () {
     let user = await User.register({
       ...newUser,
-      password: "password",
       isAdmin: true,
     });
     expect(user).toEqual({ ...newUser, isAdmin: true });
@@ -96,6 +94,46 @@ describe("register", function () {
         password: "password",
       });
       await User.register({
+        ...newUser,
+        password: "password",
+      });
+      fail();
+    } catch (err) {
+      expect(err instanceof BadRequestError).toBeTruthy();
+    }
+  });
+});
+
+/************************************** register self */
+
+describe("register self", function () {
+  const newUser = {
+    username: "new",
+    firstName: "Test",
+    lastName: "Tester",
+    email: "test@test.com",
+    isAdmin: false,
+  };
+
+  test("works: register user", async function () {
+    let user = await User.registerSelf({
+      ...newUser,
+      password: "password",
+    });
+    expect(user).toEqual(newUser);
+    const found = await db.query("SELECT * FROM users WHERE username = 'new'");
+    expect(found.rows.length).toEqual(1);
+    expect(found.rows[0].is_admin).toEqual(false);
+    expect(found.rows[0].password.startsWith("$2b$")).toEqual(true);
+  });
+
+  test("error: if duplicate username", async function () {
+    try {
+      await User.registerSelf({
+        ...newUser,
+        password: "password",
+      });
+      await User.registerSelf({
         ...newUser,
         password: "password",
       });
@@ -255,6 +293,7 @@ describe("apply for a job", function () {
       {
         job_id: testJobIds[0],
         username: "u1",
+        state: null,
       },
     ]);
   });
@@ -274,6 +313,35 @@ describe("apply for a job", function () {
       fail();
     } catch (err) {
       expect(err instanceof BadRequestError).toBeTruthy();
+    }
+  });
+});
+
+/************************************** update state of a job application */
+
+describe("update state of job application", function () {
+  test("works: update state of application", async function () {
+    await User.apply("u1", testJobIds[0]);
+    await User.updateApplication("u1", testJobIds[0], "interested");
+    let appRes = await db.query(
+      "SELECT * FROM applications WHERE username=$1",
+      ["u1"]
+    );
+    expect(appRes.rows).toEqual([
+      {
+        job_id: testJobIds[0],
+        username: "u1",
+        state: "interested",
+      },
+    ]);
+  });
+
+  test("error: application not found", async function () {
+    try {
+      await User.updateApplication("u1", testJobIds[0], "interested");
+      fail();
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
     }
   });
 });

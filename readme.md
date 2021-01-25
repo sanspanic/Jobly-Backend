@@ -12,3 +12,8 @@ To run all tests:
 Or to run individual file tests
 
     jest filepath
+    
+    
+To seed DB run 
+
+	psql < jobly.sql

@@ -12,6 +12,7 @@ const {
   commonAfterEach,
   commonAfterAll,
   u1Token,
+  u3Token,
   adminToken,
   testJobIds,
 } = require("./_testCommon");
@@ -453,5 +454,70 @@ describe("POST /users/:username/job/:jobId", function () {
       .post(`/users/u1/jobs/0`)
       .set("authorization", `Bearer ${adminToken}`);
     expect(resp.statusCode).toEqual(400);
+  });
+});
+
+/************************************** PATCH /users/:username/job/:jobId */
+
+describe("PATCH /users/:username/job/:jobId", function () {
+  test("works: for users if updating own app", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[0]}`)
+      .send({ state: "interested" })
+      .set("authorization", `Bearer ${u3Token}`);
+    expect(resp.body).toEqual({
+      jobId: `${testJobIds[0]}`,
+      state: "interested",
+    });
+  });
+
+  test("works: for admin updating others app", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[0]}`)
+      .send({ state: "interested" })
+      .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.body).toEqual({
+      jobId: `${testJobIds[0]}`,
+      state: "interested",
+    });
+  });
+
+  test("error: if wrong JSON passed in", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[0]}`)
+      .send({ state: "not-a-valid-state" })
+      .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.statusCode).toEqual(400);
+  });
+
+  test("error: bad request if invalid state", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[0]}`)
+      .send({ state: "not-a-valid-state" })
+      .set("authorization", `Bearer ${adminToken}`);
+    expect(resp.statusCode).toEqual(400);
+  });
+
+  test("error: unauth for non-admin users if not self", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[0]}`)
+      .send({ state: "interested" })
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("error: unauth for anon", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[0]}`)
+      .send({ state: "interested" });
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("error: not found if wrong jobId or username combination", async function () {
+    const resp = await request(app)
+      .patch(`/users/u3/jobs/${testJobIds[2]}`)
+      .send({ state: "interested" })
+      .set("authorization", `Bearer ${u3Token}`);
+    expect(resp.statusCode).toEqual(404);
   });
 });
