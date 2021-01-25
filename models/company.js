@@ -60,12 +60,11 @@ class Company {
   /* Find all companies filtered by name, min and max employee count */
 
   static async filter(query) {
-    let { name, minEmployees, maxEmployees } = query;
+    const { name, minEmployees, maxEmployees } = query;
 
     //breaks query down into 3 parts: start, middle, end
-    //middle further broken down into name query and employee num queries
-    //middle put back together using join on ' AND '
-    //captures values in array and assigns position based on array length
+    //middle eventually put back together using join on ' AND '
+    //captures values in array and assigns position based on array length, array then passed to final query
 
     if (minEmployees > maxEmployees) {
       throw new BadRequestError(
@@ -73,77 +72,50 @@ class Company {
       );
     }
 
-    //put together query
-    const queryStringStart = `SELECT handle,
+    //initialise vars to capture indexes associated with values, and the valueArr to pass in to query
+    const indexes = { name: null, minEmployees: null, maxEmployees };
+    const valueArr = [];
+
+    //eventually below query parts will be combined into final query. middle part with first be combined by .join on ' AND '
+    const firstPartOfQuery = `SELECT handle,
                               name,
                               description,
                               num_employees AS "numEmployees",
                               logo_url AS "logoUrl"
-                            FROM companies WHERE `;
-    const queryStringEnd = `ORDER BY name`;
-
-    let queryStringMiddle = ``;
-    let valueArray = [];
-    let valueIndices = {};
-    let queryStringEmpFiltering = [];
+                            FROM companies WHERE`;
+    const lastPartOfQuery = `ORDER BY name`;
+    const middlePartOfQueryArr = [];
 
     if (name) {
-      valueArray.push(`%${name}%`);
-      valueIndices.name = valueArray.length;
-      queryStringMiddle = queryStringMiddle.concat(
-        `name ILIKE $${valueIndices.name}`
-      );
+      valueArr.push(`%${name}%`);
+      indexes.name = valueArr.length;
+      middlePartOfQueryArr.push(`name ILIKE $${indexes.name}`);
     }
 
     if (minEmployees) {
-      valueArray.push(minEmployees);
-      valueIndices.minEmployees = valueArray.length;
-      queryStringEmpFiltering.push(
-        `num_employees >= $${valueIndices.minEmployees}`
-      );
+      valueArr.push(minEmployees);
+      indexes.minEmployees = valueArr.length;
+      middlePartOfQueryArr.push(`num_employees >= $${indexes.minEmployees}`);
     }
 
     if (maxEmployees) {
-      valueArray.push(maxEmployees);
-      valueIndices.maxEmployees = valueArray.length;
-      queryStringEmpFiltering.push(
-        `num_employees <= $${valueIndices.maxEmployees}`
-      );
+      valueArr.push(maxEmployees);
+      indexes.maxEmployees = valueArr.length;
+      middlePartOfQueryArr.push(`num_employees <= $${indexes.maxEmployees}`);
     }
 
-    if (name) {
-      queryStringMiddle = [queryStringMiddle, ...queryStringEmpFiltering].join(
-        " AND "
-      );
-    } else {
-      queryStringMiddle = [...queryStringEmpFiltering].join(" AND ");
-    }
+    const middlePartOfQuery = middlePartOfQueryArr.join(" AND ");
 
-    //console.log(`${queryStringStart} ${queryStringMiddle} ${queryStringEnd}`);
-
-    const companiesRes = await db.query(
-      `${queryStringStart} ${queryStringMiddle} ${queryStringEnd}`,
-      valueArray
+    const companyRes = await db.query(
+      `${firstPartOfQuery} ${middlePartOfQuery} ${lastPartOfQuery}`,
+      valueArr
     );
 
-    /*     const companiesRes = await db.query(
-      `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           WHERE name ILIKE $1
-           ORDER BY name`,
-      [`%${name}%`]
-    ); */
-
-    if (companiesRes.rows.length === 0) {
-      throw new NotFoundError(
-        `No company matching your search criteria was found.`
-      );
+    if (companyRes.rows.length === 0) {
+      throw new NotFoundError("No company found matching your search criteria");
     }
-    return companiesRes.rows;
+
+    return companyRes.rows;
   }
 
   /** Given a company handle, return data about company.
@@ -155,6 +127,7 @@ class Company {
    **/
 
   static async get(handle) {
+    //tradeoff: more JS but only one db query, or less JS but 2 separate db queries. opted for one query only
     const companyRes = await db.query(
       `SELECT c.handle,
               c.name,

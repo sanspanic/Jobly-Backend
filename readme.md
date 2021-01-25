@@ -6,6 +6,9 @@ To run this:
 
     node server.js
     
-To run the tests:
+To run all tests:
 
     jest -i
+Or to run individual file tests
+
+    jest filepath

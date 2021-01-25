@@ -12,6 +12,7 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  testJobIds,
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -22,7 +23,7 @@ afterAll(commonAfterAll);
 /************************************** authenticate */
 
 describe("authenticate", function () {
-  test("works", async function () {
+  test("works: authenticates user", async function () {
     const user = await User.authenticate("u1", "password1");
     expect(user).toEqual({
       username: "u1",
@@ -33,7 +34,7 @@ describe("authenticate", function () {
     });
   });
 
-  test("unauth if no such user", async function () {
+  test("error: unauth if no such user", async function () {
     try {
       await User.authenticate("nope", "password");
       fail();
@@ -42,7 +43,7 @@ describe("authenticate", function () {
     }
   });
 
-  test("unauth if wrong password", async function () {
+  test("error: unauth if wrong password", async function () {
     try {
       await User.authenticate("c1", "wrong");
       fail();
@@ -63,7 +64,7 @@ describe("register", function () {
     isAdmin: false,
   };
 
-  test("works", async function () {
+  test("works: register user", async function () {
     let user = await User.register({
       ...newUser,
       password: "password",
@@ -88,7 +89,7 @@ describe("register", function () {
     expect(found.rows[0].password.startsWith("$2b$")).toEqual(true);
   });
 
-  test("bad request with dup data", async function () {
+  test("error: bad request with dup data", async function () {
     try {
       await User.register({
         ...newUser,
@@ -108,7 +109,7 @@ describe("register", function () {
 /************************************** findAll */
 
 describe("findAll", function () {
-  test("works", async function () {
+  test("works: finds all users", async function () {
     const users = await User.findAll();
     expect(users).toEqual([
       {
@@ -132,7 +133,7 @@ describe("findAll", function () {
 /************************************** get */
 
 describe("get", function () {
-  test("works", async function () {
+  test("works: gets user w/o applications", async function () {
     let user = await User.get("u1");
     expect(user).toEqual({
       username: "u1",
@@ -140,10 +141,23 @@ describe("get", function () {
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      applications: [],
     });
   });
 
-  test("not found if no such user", async function () {
+  test("works: gets user with applications", async function () {
+    let user = await User.get("u2");
+    expect(user).toEqual({
+      username: "u2",
+      firstName: "U2F",
+      lastName: "U2L",
+      email: "u2@email.com",
+      isAdmin: false,
+      applications: [testJobIds[0], testJobIds[1]],
+    });
+  });
+
+  test("error: not found if no such user", async function () {
     try {
       await User.get("nope");
       fail();
@@ -163,7 +177,7 @@ describe("update", function () {
     isAdmin: true,
   };
 
-  test("works", async function () {
+  test("works: updates user", async function () {
     let job = await User.update("u1", updateData);
     expect(job).toEqual({
       username: "u1",
@@ -187,7 +201,7 @@ describe("update", function () {
     expect(found.rows[0].password.startsWith("$2b$")).toEqual(true);
   });
 
-  test("not found if no such user", async function () {
+  test("error: not found if no such user", async function () {
     try {
       await User.update("nope", {
         firstName: "test",
@@ -198,7 +212,7 @@ describe("update", function () {
     }
   });
 
-  test("bad request if no data", async function () {
+  test("error: bad request if no data", async function () {
     expect.assertions(1);
     try {
       await User.update("c1", {});
@@ -211,20 +225,55 @@ describe("update", function () {
 
 /************************************** remove */
 
-describe("remove", function () {
+describe("works: remove user", function () {
   test("works", async function () {
     await User.remove("u1");
-    const res = await db.query(
-        "SELECT * FROM users WHERE username='u1'");
+    const res = await db.query("SELECT * FROM users WHERE username='u1'");
     expect(res.rows.length).toEqual(0);
   });
 
-  test("not found if no such user", async function () {
+  test("erros: not found if no such user", async function () {
     try {
       await User.remove("nope");
       fail();
     } catch (err) {
       expect(err instanceof NotFoundError).toBeTruthy();
+    }
+  });
+});
+
+/************************************** apply for a job */
+
+describe("apply for a job", function () {
+  test("works: add application", async function () {
+    await User.apply("u1", testJobIds[0]);
+    let appRes = await db.query(
+      "SELECT * FROM applications WHERE username=$1",
+      ["u1"]
+    );
+    expect(appRes.rows).toEqual([
+      {
+        job_id: testJobIds[0],
+        username: "u1",
+      },
+    ]);
+  });
+
+  test("error: application not created if no such job", async function () {
+    try {
+      await User.apply("u1", 0);
+      fail();
+    } catch (err) {
+      expect(err instanceof BadRequestError).toBeTruthy();
+    }
+  });
+
+  test("error: application not created if no such user", async function () {
+    try {
+      await User.apply("nope", testJobIds[0]);
+      fail();
+    } catch (err) {
+      expect(err instanceof BadRequestError).toBeTruthy();
     }
   });
 });
