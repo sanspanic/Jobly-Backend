@@ -18,7 +18,7 @@ This is an Express backend for a fake job application website.
 5. Authentication using JWT tokens. For learning purposes, auth middleware implemented from scratch. 
 
 
-##For developers:
+## For developers:
 
 To run:
 
